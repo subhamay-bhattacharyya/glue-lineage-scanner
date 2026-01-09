@@ -153,17 +153,25 @@ def _full_attr_name(node: ast.AST) -> str:
 
 def _call_name(node: ast.AST) -> str:
     """
-    Return fully qualified call name for a node.func, best-effort.
-    Examples:
-      glueContext.create_dynamic_frame.from_catalog
-      spark.sql
-      df.createOrReplaceTempView
+    Return best-effort dotted call name.
+    Supports chained calls where the receiver is itself a Call, e.g.
+      spark.read.format(...).load(...)
     """
     if isinstance(node, ast.Name):
         return node.id
+
     if isinstance(node, ast.Attribute):
-        return _full_attr_name(node)
+        base = node.value
+        # If base is a Call (method chaining), recurse into base.func
+        if isinstance(base, ast.Call):
+            return f"{_call_name(base.func)}.{node.attr}"
+        # Normal attribute chain (x.y.z)
+        if isinstance(base, (ast.Name, ast.Attribute)):
+            return f"{_call_name(base)}.{node.attr}"
+        return node.attr
+
     return "<unknown>"
+
 
 
 def _extract_kwargs(call: ast.Call) -> Dict[str, Any]:
@@ -380,6 +388,44 @@ class GlueLineageVisitor(ast.NodeVisitor):
                 output_var=target_var,
             )
             self.conversions.append(ev)
+        
+        # 8) Conversion: 
+        # Spark reads: ...load(...)
+        if fn.endswith(".load"):
+            src = self._extract_spark_load(call=node)
+            if src:
+                ev = ReadEvent(
+                    event_type="read",
+                    lineno=lineno,
+                    col_offset=col,
+                    end_lineno=end_lineno,
+                    end_col_offset=end_col,
+                    target_var=target_var,
+                    function=fn,
+                    raw={"args": _extract_args(node), "kwargs": _extract_kwargs(node)},
+                    source_type="spark_read",
+                    source=src,
+                )
+                self.reads.append(ev)
+
+        # Spark writes: ...save(...)
+        if fn.endswith(".save") or fn.endswith(".saveAsTable"):
+            sink = self._extract_spark_save(call=node, fn=fn)
+            if sink:
+                ev = WriteEvent(
+                    event_type="write",
+                    lineno=lineno,
+                    col_offset=col,
+                    end_lineno=end_lineno,
+                    end_col_offset=end_col,
+                    target_var=target_var,
+                    function=fn,
+                    raw={"args": _extract_args(node), "kwargs": _extract_kwargs(node)},
+                    sink_type="spark_write",
+                    sink=sink,
+                )
+                self.writes.append(ev)
+
 
         self.generic_visit(node)
 
@@ -460,6 +506,41 @@ class GlueLineageVisitor(ast.NodeVisitor):
                 return self._simple_aliases.get(name, name)
         return None
 
+    def _extract_spark_load(self, call: ast.Call) -> Optional[Dict[str, Any]]:
+        """
+        Best-effort extraction for Spark load(path).
+        Captures path as literal or {"$ref": var}.
+        """
+        path = None
+        if call.args:
+            path = _literal(call.args[0])
+        else:
+            kw = _extract_kwargs(call)
+            if "path" in kw:
+                path = kw["path"]
+
+        if path is None:
+            return None
+
+        return {"kind": "spark_load", "path": path}
+
+    def _extract_spark_save(self, call: ast.Call, fn: str) -> Optional[Dict[str, Any]]:
+        """
+        Best-effort extraction for Spark save/saveAsTable.
+        Captures target as literal or {"$ref": var}.
+        """
+        target = None
+        if call.args:
+            target = _literal(call.args[0])
+        else:
+            kw = _extract_kwargs(call)
+            target = kw.get("path") or kw.get("tableName")
+
+        if target is None:
+            return None
+
+        kind = "saveAsTable" if fn.endswith(".saveAsTable") else "save"
+        return {"kind": kind, "target": target}
 
 # -----------------------------
 # Public API
