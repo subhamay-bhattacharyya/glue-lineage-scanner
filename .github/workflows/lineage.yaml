@@ -48,12 +48,31 @@ jobs:
             --input "${{ inputs.path || 'glue_jobs' }}" \
             --outdir out
 
-      - name: Add summary
+      - name: Build lineage graph + Mermaid
         run: |
-          echo "## Glue Lineage Scan" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Input: \`${{ inputs.path || 'glue_jobs' }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- Output: \`out/lineage-events.json\`" >> $GITHUB_STEP_SUMMARY
+          python -m lineage_app.build.build_lineage \
+            --infile out/lineage-events.json \
+            --outfile out/lineage.json \
+            --mermaid out/lineage.mmd
+
+      - name: Add summary (incl. Mermaid diagram)
+        shell: bash
+        run: |
+          echo "## Glue Lineage Scan" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Input: \`${{ inputs.path || 'glue_jobs' }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Events: \`out/lineage-events.json\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Lineage graph: \`out/lineage.json\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Lineage Diagram" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          # Add Mermaid fences here (raw .mmd file)
+          echo '```mermaid' >> "$GITHUB_STEP_SUMMARY"
+          cat out/lineage.mmd >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
