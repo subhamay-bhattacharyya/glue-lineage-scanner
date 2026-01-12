@@ -56,16 +56,22 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## Glue Lineage Scan"
-            echo ""
-            echo "- Input: \`${{ inputs.path || 'glue_jobs' }}\`"
-            echo "- Events: \`out/lineage-events.json\`"
-            echo "- Lineage graph: \`out/lineage.json\`"
-            echo ""
-            echo "### Lineage Diagram"
-            echo ""
-            echo '```mermaid'
-            cat out/lineage.mmd
+            cat <<EOF
+            ## Glue Lineage Scan
+
+            - Input: \`${{ inputs.path || 'glue_jobs' }}\`
+            - Events: \`out/lineage-events.json\`
+            - Lineage graph: \`out/lineage.json\`
+
+            ### Lineage Diagram
+
+            \`\`\`mermaid
+            EOF
+
+            # Ensure mermaid content is clean + ends with newline
+            # Also indent by 2 spaces (helps GitHub renderer)
+            sed 's/^/  /' out/lineage.mmd
+            echo ""   # <- force newline separation
             echo '```'
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
