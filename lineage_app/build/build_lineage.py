@@ -185,7 +185,7 @@ def main() -> None:
             lineage = item["lineage"]
 
             # Keep comment, but avoid blank line afterwards (some renderers are picky)
-            mermaid_lines.append(f"%% {file_path}")
+            # mermaid_lines.append(f"%% {file_path}")
             mermaid_lines.append(lineage_to_mermaid(lineage))
         mermaid_lines.append("```")
 
