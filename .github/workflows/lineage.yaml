@@ -64,10 +64,10 @@ jobs:
             echo ""
             echo "### Lineage Diagram"
             echo ""
-            echo '```mermaid'
+            # echo '```mermaid'
             # Remove Mermaid comment lines so the first line is 'flowchart ...'
-            grep -v -E '^\s*%%' out/lineage.mmd
-            echo '```'
+            # grep -v -E '^\s*%%' out/lineage.mmd
+            # echo '```'
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
 
