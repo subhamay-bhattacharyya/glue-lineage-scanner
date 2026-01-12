@@ -85,3 +85,6 @@ dist/
 awscliv2.zip
 LICENSE.txt
 aws/*
+.venv/*
+*/__pycache__/*
+out/*

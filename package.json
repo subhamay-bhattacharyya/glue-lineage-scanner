@@ -1,5 +1,5 @@
 {
-    "name": "terraform-template",
+    "name": "glue-lineage-scanner",
     "version": "0.0.0",
     "description": "A custom Terraform module GitHub template repository to manage AWS resource with Semantic Release support.",
     "license": "MIT",
@@ -20,12 +20,12 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/subhamay-bhattacharyya/terraform-template.git"
+        "url": "git+https://github.com/subhamay-bhattacharyya/glue-lineage-scanner.git"
     },
     "keywords": [],
     "author": "",
     "bugs": {
-        "url": "https://github.com/subhamay-bhattacharyya/terraform-template/issues"
+        "url": "https://github.com/subhamay-bhattacharyya/glue-lineage-scanner/issues"
     },
-    "homepage": "https://github.com/subhamay-bhattacharyya/terraform-template#readme"
+    "homepage": "https://github.com/subhamay-bhattacharyya/glue-lineage-scanner#readme"
 }
