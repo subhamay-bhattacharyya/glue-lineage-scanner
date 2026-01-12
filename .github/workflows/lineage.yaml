@@ -65,12 +65,12 @@ jobs:
             echo "### Lineage Diagram"
             echo ""
             echo '```mermaid'
-            # indent + force newline at end (GitHub renderer is picky)
-            sed 's/^/  /' out/lineage.mmd
-            echo ""
+            # Remove Mermaid comment lines so the first line is 'flowchart ...'
+            grep -v -E '^\s*%%' out/lineage.mmd
             echo '```'
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
+
 
 
       - name: Upload artifact
