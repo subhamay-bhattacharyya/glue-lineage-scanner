@@ -37,10 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # If you have requirements.txt:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          # Or install your package in editable mode:
-          pip install -e .
 
       - name: Run lineage extraction
         run: |
@@ -58,20 +55,19 @@ jobs:
       - name: Add summary (incl. Mermaid diagram)
         shell: bash
         run: |
-          echo "## Glue Lineage Scan" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Input: \`${{ inputs.path || 'glue_jobs' }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Events: \`out/lineage-events.json\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Lineage graph: \`out/lineage.json\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Lineage Diagram" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Glue Lineage Scan"
+            echo ""
+            echo "- Input: \`${{ inputs.path || 'glue_jobs' }}\`"
+            echo "- Events: \`out/lineage-events.json\`"
+            echo "- Lineage graph: \`out/lineage.json\`"
+            echo ""
+            echo "### Lineage Diagram"
+            echo ""
+            cat out/lineage.mmd
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
 
-          # Add Mermaid fences here (raw .mmd file)
-          echo '```mermaid' >> "$GITHUB_STEP_SUMMARY"
-          cat out/lineage.mmd >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
 
 
       - name: Upload artifact
